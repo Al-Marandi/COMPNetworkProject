@@ -64,7 +64,7 @@ public static void main(String args[]) throws IOException {
 			if(commands[i].equals("-d")) {
 				pathToDir = commands[++i];
 			}else {
-				pathToDir = "C:/Users/Manan/Desktop/demo";
+				pathToDir = "\\src\\comp6461\\a2\\";
 			}
 			if(commands[i].equals("-v")) {
 				isVerbose  = true;
