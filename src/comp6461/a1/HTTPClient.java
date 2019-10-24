@@ -98,7 +98,12 @@ public class HTTPClient {
 	    				
 	    		}
 	    		hlib.host = url.getHost();
-	        	hlib.port = "80";
+	    		if(url.getPort()!=-1) {
+	    			hlib.port = String.valueOf(url.getPort());
+	    		}
+	    		else {
+	    			hlib.port = "80";
+	    		}
 	            hlib.path = url.getPath();
 	            hlib.addData(url.getQuery());
 	    		
@@ -161,7 +166,14 @@ public class HTTPClient {
 	    				
 	    		}
 	    		hlib.host = url.getHost();
-	        	hlib.port = "8000";
+	    		
+	    		if(url.getPort()!=-1) {
+	    			hlib.port = String.valueOf(url.getPort());
+	    		}
+	    		else {
+	    			hlib.port = "80";
+	    		}
+
 	            hlib.path = url.getPath();	
 	    	}
 	    	//it checks if any information is missing or command is wrong
@@ -203,6 +215,8 @@ httpc help get
 httpc get http://httpbin.org/get?course=networking&assignment=1
 
 httpc get -v http://httpbin.org/get?course=networking&assignment=1
+
+httpc get -v http://localhost:8080
 
 httpc post -h Content-Type:application/json --d {"Assignment":1} http://httpbin.org/post
 

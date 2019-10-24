@@ -93,7 +93,13 @@ public class HTTPLib {
 	 */
 	public void sendHTTPRequest() throws UnknownHostException, IOException {
 		this.redirectCount = 0;
-		sendRequest();
+		if(!this.host.contains("localhost")) {
+			sendRequest();
+		}
+		else {
+			sendLocalRequest();
+		}
+
 	}
 	
 	/**
@@ -199,7 +205,55 @@ public class HTTPLib {
 	    socket.close();
 	  }
 	
-		
+	
+	/**
+	 * This method is responsible for sending HTPP request to the local server
+	 * @throws UnknownHostException
+	 * @throws IOException
+	 */
+	void sendLocalRequest() throws UnknownHostException, IOException {
+	    this.socket = new Socket(this.host, Integer.parseInt(this.port));
+	    
+	    // GET operation
+	    if (this.operation.toUpperCase().equals("GET")) {
+	    	
+		  // append request operation and path
+		  this.request = "GET /" + this.path;
+		  
+		  if(this.datas.size() > 0  ) {
+			  this.request = this.request + this.datas.get(0);
+		  }
+		  
+	    } 
+	    
+	    // POST operation
+	    else if (this.operation.toUpperCase().equals("POST")) {
+			// append request operation
+			this.request = "POST /";  
+			  
+			//append data tokens
+			if(this.datas.size() > 0  ) {
+			  this.request = this.request + this.datas.get(0);
+			}
+			
+			// not a valid HTTP operation
+			else {
+			  System.out.println("Invalid HTTP operation !!!");
+			  socket.close();
+			  return;
+			}
+	    }
+	    
+	    // send HTTP request
+	    writeRequest();
+	    
+	    // print HTTP response
+	    printResponse();
+
+	    // close the socket
+	    socket.close();
+	  }
+	
 	
 	/**
 	 * This method is responsible for append headers in header Map to the HTTP request
