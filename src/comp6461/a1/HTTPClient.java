@@ -161,7 +161,7 @@ public class HTTPClient {
 	    				
 	    		}
 	    		hlib.host = url.getHost();
-	        	hlib.port = "80";
+	        	hlib.port = "8000";
 	            hlib.path = url.getPath();	
 	    	}
 	    	//it checks if any information is missing or command is wrong

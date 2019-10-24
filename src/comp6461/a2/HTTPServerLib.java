@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-public class HTTPServerLib {
+public class HTTPServerLib extends Thread{
 	boolean isContentType = false;
 	boolean isDisposition = false;
 	boolean isServerRunning = true;
