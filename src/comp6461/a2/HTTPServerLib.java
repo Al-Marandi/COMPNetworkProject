@@ -55,15 +55,13 @@ public class HTTPServerLib extends Thread{
 			//output stream
 			out = new PrintWriter(socket.getOutputStream());
 			while((request = in.readLine())!=null) {
-				System.out.println("------------" + request);
-				if(request.endsWith("HTTP/1.1")) {
+				if(request.endsWith("HTTP/1.0")) {
 					httpcRequest = request;
 					isHttpcClient = true;
 				}
 				else if(request.matches("(GET|POST) /(.*)")) {
 						isHttpfsClient = true;
 						clientRequest = request;
-						System.out.println("------------11");
 				}		
 				
 				if(isHttpfsClient) {
@@ -78,11 +76,11 @@ public class HTTPServerLib extends Thread{
 					}
 				}
 				if(isHttpfsClient && request.isEmpty()) {
+					System.out.println("!!!!!!");
 					break;
 				}
 			
 				if(isHttpcClient) {
-					System.out.println(request);
 					if(request.matches("(.*):(.*)")&&count==0){
 						String[] headers = request.split(":");
 						httpfsModelObject.addHeaders(headers[0], headers[1]);
@@ -96,11 +94,11 @@ public class HTTPServerLib extends Thread{
 					if(request.isEmpty())
 						count++;
 				}	
-			}
-			
+//			}      //just uncomment this
 			if(isHttpcClient) {
 				if(httpcRequest.matches("(GET|POST) /(.*)")) {
 					this.httpcRequest();
+					break;
 				}
 			}
 			
@@ -108,17 +106,19 @@ public class HTTPServerLib extends Thread{
 				System.out.println("Client requested command..."+clientRequest);
 	
 				if(clientRequest.startsWith("GET")) {
-					this.getServerRequest(clientRequest.substring(4));
+					this.getServerRequest(clientRequest.substring(5));
 				}else if(clientRequest.startsWith("POST")) {
-					System.out.println(clientRequest.substring(5));
-					String fileName = clientRequest.substring(5);
+					String fileName = clientRequest.substring(6);
 					this.postServerRequest(fileName, content);
 				}
+				break;
+			}		
 			}
 			out.println("");
 			out.flush();
 			in.close();
 			socket.close();
+			
 			
 
 		}catch (IOException e) {
