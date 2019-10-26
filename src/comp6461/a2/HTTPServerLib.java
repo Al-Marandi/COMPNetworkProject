@@ -55,7 +55,7 @@ public class HTTPServerLib extends Thread{
 			//output stream
 			out = new PrintWriter(socket.getOutputStream());
 			while((request = in.readLine())!=null) {
-				
+
 				if(request.endsWith("HTTP/1.1")) {
 					httpcRequest = request;
 					isHttpcClient = true;

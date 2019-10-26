@@ -1,4 +1,5 @@
-package comp6461.a1;
+package comp6461.a2;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -218,7 +219,7 @@ public class HTTPLib {
 	    if (this.operation.toUpperCase().equals("GET")) {
 	    	
 		  // append request operation and path
-		  this.request = "GET /" + this.path;
+		  this.request = "GET /";
 		  
 		  if(this.datas.size() > 0  ) {
 			  this.request = this.request + this.datas.get(0);
@@ -243,6 +244,9 @@ public class HTTPLib {
 			  return;
 			}
 	    }
+	    
+	    // terminate request with an empty line
+	    this.request = this.request + "\r\n";
 	    
 	    // send HTTP request
 	    writeRequest();

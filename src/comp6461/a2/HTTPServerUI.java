@@ -1,8 +1,11 @@
 package comp6461.a2;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
@@ -65,14 +68,14 @@ public static void main(String args[]) throws IOException {
 				pathToDir = commands[++i];
 			}else {
 
-				pathToDir = "\\src\\comp6461\\a2\\";
+				pathToDir = "src/comp6461/a2/";
 			}
 			if(commands[i].equals("-v")) {
 				isVerbose  = true;
 			}
 		}
 		if(!isPort) {
-			port = 8080;
+			port = 7896;
 		}
 		ServerSocket serverSocket = new ServerSocket(port);
 		int counter = 0;
@@ -83,8 +86,10 @@ public static void main(String args[]) throws IOException {
 		while(true) {
 			counter++;
 			Socket serverClient = serverSocket.accept();
-			if(isVerbose)
+			if(isVerbose) {
 				System.out.println(">> Client "+counter+" connection established");
+			}
+			
 			HTTPServerLib hst = new HTTPServerLib(serverClient,counter,pathToDir);
 			hst.start();
 		}
