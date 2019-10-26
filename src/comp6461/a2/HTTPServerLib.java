@@ -55,14 +55,15 @@ public class HTTPServerLib extends Thread{
 			//output stream
 			out = new PrintWriter(socket.getOutputStream());
 			while((request = in.readLine())!=null) {
-
+				System.out.println("------------" + request);
 				if(request.endsWith("HTTP/1.1")) {
 					httpcRequest = request;
 					isHttpcClient = true;
 				}
-				else if(request.matches("(GET|POST)/(.*)")) {
+				else if(request.matches("(GET|POST) /(.*)")) {
 						isHttpfsClient = true;
 						clientRequest = request;
+						System.out.println("------------11");
 				}		
 				
 				if(isHttpfsClient) {
