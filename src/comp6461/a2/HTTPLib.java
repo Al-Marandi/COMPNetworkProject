@@ -272,7 +272,8 @@ public class HTTPLib {
 	 * This method is responsible for printing the response in the console
 	 */
 	void printResponse() {
-		try {			
+		try {		
+			System.out.println("in print response");
 		    this.reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));		    
 			String line; 
 	        boolean isResponseContent = false;
@@ -280,7 +281,8 @@ public class HTTPLib {
 	        String newURL = "";
 	        
 	        if(!this.save) {
-		        while ((line = this.reader.readLine()) != null) {		        	
+	        	System.out.println("not save");
+		        while ((line = this.reader.readLine()) != null) {	
 		        	response = response + line + "\r\n";
 		        	
 		        	if(this.verbos || isResponseContent) {

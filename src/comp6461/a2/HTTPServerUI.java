@@ -68,14 +68,14 @@ public static void main(String args[]) throws IOException {
 				pathToDir = commands[++i];
 			}else {
 
-				pathToDir = "src/comp6461/a2/";
+				pathToDir = "src/comp6461/a2";
 			}
 			if(commands[i].equals("-v")) {
 				isVerbose  = true;
 			}
 		}
 		if(!isPort) {
-			port = 7896;
+			port = 8080;
 		}
 		ServerSocket serverSocket = new ServerSocket(port);
 		int counter = 0;
