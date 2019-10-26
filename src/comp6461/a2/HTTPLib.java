@@ -120,7 +120,7 @@ public class HTTPLib {
 		  // append request data
 		  if(!this.dataFile.isEmpty()) {
 			  if(!readDataFromFile()) {
-				  System.out.println("the file for input data is not found !!!!");
+				  System.out.println("The file for input data is not found !!!!");
 				  socket.close();
 				  return;
 			  }
@@ -157,7 +157,7 @@ public class HTTPLib {
     	  // get request data
 	      if(!this.dataFile.isEmpty()) {
 	    	  if(!readDataFromFile()) {
-				  System.out.println("the file for input data is not found !!!!");
+				  System.out.println("The file for input data is not found !!!!");
 				  socket.close();
 				  return;
 			  }
@@ -273,7 +273,6 @@ public class HTTPLib {
 	 */
 	void printResponse() {
 		try {		
-			System.out.println("in print response");
 		    this.reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));		    
 			String line; 
 	        boolean isResponseContent = false;
@@ -281,7 +280,6 @@ public class HTTPLib {
 	        String newURL = "";
 	        
 	        if(!this.save) {
-	        	System.out.println("not save");
 		        while ((line = this.reader.readLine()) != null) {	
 		        	response = response + line + "\r\n";
 		        	
