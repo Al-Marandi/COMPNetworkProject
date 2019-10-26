@@ -63,7 +63,6 @@ public class HTTPServerLib extends Thread{
 				else if(request.matches("(GET|POST) /(.*)")) {
 						isHttpfsClient = true;
 						clientRequest = request;
-						System.out.println("------------11");
 				}		
 				
 				if(isHttpfsClient) {
