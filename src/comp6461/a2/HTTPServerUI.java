@@ -90,7 +90,7 @@ public static void main(String args[]) throws IOException {
 				System.out.println(">> Client "+counter+" connection established");
 			}
 			
-			HTTPServerLib hst = new HTTPServerLib(serverClient,counter,pathToDir);
+			HTTPServerLib hst = new HTTPServerLib(serverClient,pathToDir);
 			hst.start();
 		}
 	}

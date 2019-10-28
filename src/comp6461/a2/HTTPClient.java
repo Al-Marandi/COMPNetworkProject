@@ -4,7 +4,7 @@ import java.net.*;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.io.*;
- 
+
 public class HTTPClient {
 	static boolean flag = false;
     /**
@@ -66,6 +66,7 @@ public class HTTPClient {
     	else if(data[0].equalsIgnoreCase("httpc") && !data[data.length-1].contains("http")) {
     		hlib.host = "localhost";
     		hlib.port = "8000";
+    		hlib.verbos = true;
     		if(data[1].equalsIgnoreCase("get")) {
     			hlib.operation = "Get";
     		}

@@ -94,7 +94,7 @@ public class HTTPLib {
 	 */
 	public void sendHTTPRequest() throws UnknownHostException, IOException {
 		this.redirectCount = 0;
-		if(!this.host.contains("localhost")) {
+		if(!this.host.contains("localhost") || true) {
 			sendRequest();
 		}
 		else {
@@ -282,7 +282,6 @@ public class HTTPLib {
 	        if(!this.save) {
 		        while ((line = this.reader.readLine()) != null) {	
 		        	response = response + line + "\r\n";
-		        	
 		        	if(this.verbos || isResponseContent) {
 		        		System.out.println(line);
 		        	}
@@ -336,17 +335,7 @@ public class HTTPLib {
 		        			System.out.println(":::::: Redirect [" + this.redirectCount + "] to");
 		        			System.out.println(newURL);
 		        			System.out.println();
-		        			
-		        			//int pathIndex = newURL.indexOf("/");
-		//        			System.out.println("host: "+ newURL.substring(0,pathIndex != -1 ? pathIndex : newURL.length()));
-		//        			this.host = newURL.substring(0,pathIndex != -1 ? pathIndex : newURL.length());
-		//        			if(pathIndex != -1) {
-		////        				System.out.println("path: "+ newURL.substring(pathIndex,newURL.length()));
-		//        				this.path = newURL.substring(pathIndex,newURL.length());
-		//        			}
-		//        			else{
-		//        				this.path = "/";
-		//        			}
+		        		
 		        			
 		        			this.host = new URL(newURL).getHost();
 		        			this.path = new URL(newURL).getPath();
