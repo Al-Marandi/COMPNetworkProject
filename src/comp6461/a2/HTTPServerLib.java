@@ -135,7 +135,7 @@ public class HTTPServerLib extends Thread{
 							bfReader.close();
 					} catch (FileNotFoundException e) {
 						System.out.println("Error HTTP 404");
-						writer.println("Error HTTP 404 : File Not Found");
+						writer.println("Error HTTP 404: File Not Found");
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

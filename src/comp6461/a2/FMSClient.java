@@ -1,6 +1,5 @@
 package comp6461.a2;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,65 +9,47 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
-/**
- * Client class
- * @author Manan
- *
- */
 public class FMSClient {
 	
-	static boolean isHeader = false;
-	static boolean isContent = false;
-	static String content;
+	static String content, url, query;
+	static boolean headerFlag = false, contentFlag = false;
 	private Socket socket;
 	private PrintWriter out;
-	static String URL;
 	int port;
-	static String query;
 	static ArrayList<String> headers = new ArrayList<>();
 	
-	public FMSClient(String host, int port, String query,String content2, ArrayList<String> headers) {
-		
+	/**
+	 * Client constructor
+	 * @param host
+	 * @param port
+	 * @param query
+	 * @param content
+	 * @param headers
+	 */
+	public FMSClient(String host, int port, String query, String content, ArrayList<String> headers) {
 		try 
 		{	
-			this.content = content2;
-			this.query = query;
 			this.headers = headers;
+			this.query = query;
+			this.content = content;
 			socket = new Socket(host, port);
-			System.out.println("connected to server...");
+			System.out.println("Server connected");
+//			this.request();
 			
 		} catch (IOException e) {
-			System.out.println("");
-			System.out.println("ERROR HTTP 404: Host Not Found");
+			System.out.println("Error HTTP 404: Page Not Found");
 		}
 	}	
-
-	public void sendRequest() throws IOException {
-		out= new PrintWriter(socket.getOutputStream());
-		out.println(query);
-		
-		if(isHeader) {
-			for(int i = 0 ; i<headers.size();i++) {
-				out.println(headers.get(i));
-			}
-		}
-		if(isContent) {
-			out.println("-d"+content);
-		}
-		
-		out.println("\r\n");
-		out.flush();
-		this.printOutput();
-		out.close();
-		socket.close();
-	}
-
-	public void printOutput() {
+	
+	/**
+	 * It will print the data received from server.
+	 */
+	public void printData() {
 		try {
+			String print;
 			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			String output;
-			while((output = br.readLine()) != null) {
-				System.out.println(output);
+			while((print = br.readLine()) != null) {
+				System.out.println(print);
 			}
 			
 		} catch (IOException e) {
@@ -76,35 +57,64 @@ public class FMSClient {
 		}
 		
 	}
+
+	/**
+	 * It will send request to server.
+	 * @throws IOException
+	 */
+	public void request() throws IOException {
+		out= new PrintWriter(socket.getOutputStream());
+		out.println(query);
+		
+		if(headerFlag) {
+			for(int i = 0 ; i<headers.size();i++) {
+				out.println(headers.get(i));
+			}
+		}
+		if(contentFlag) {
+			out.println("-d"+content);
+		}
+		
+		out.println("\r\n");
+		out.flush();
+		this.printData();
+		out.close();
+		socket.close();
+	}	
 	
-	
+	/**
+	 * It is main method and it will extract different data from command and send a request to server.
+	 * @param args
+	 * @throws IOException
+	 * @throws URISyntaxException
+	 */
 	public static void main(String args[]) throws IOException, URISyntaxException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		String httpfsClient = br.readLine();
-		String[] commandClient = httpfsClient.split(" ");
-		if(commandClient[0].equals("httpfs")) {
-			for(int i =0; i<commandClient.length; i++) {
-				if(commandClient[i].equals("-h")) {
-					isHeader = true;
-					headers.add(commandClient[++i]);
+		String fsClient = br.readLine();
+		String[] cClient = fsClient.split(" ");
+		if(cClient[0].equals("httpfs")) {
+			for(int i =0; i<cClient.length; i++) {
+				if(cClient[i].startsWith("-d")) {
+					contentFlag = true;
+					content = cClient[i+1];
 				}
-				if(commandClient[i].startsWith("http://")){
-					URL = commandClient[i];
+				if(cClient[i].startsWith("http://")){
+					url = cClient[i];
 				}
-				if(commandClient[i].startsWith("-d")) {
-					isContent = true;
-					content = commandClient[++i];
+				if(cClient[i].equals("-h")) {
+					headerFlag = true;
+					headers.add(cClient[i+1]);
 				}
 			}
 		}
-		URI uri = new URI(URL);
+		URI uri = new URI(url);
 		String host = uri.getHost();
-		int port = uri.getPort();
 		query = uri.getPath();
+		int port = uri.getPort();
 		System.out.println(query.substring(1));
 		
-		FMSClient client2 = new FMSClient(host,port,query.substring(1),content, headers);
-		client2.sendRequest();
+		FMSClient client = new FMSClient(host, port, query.substring(1), content, headers);
+		client.request();
 	}
 }
 
