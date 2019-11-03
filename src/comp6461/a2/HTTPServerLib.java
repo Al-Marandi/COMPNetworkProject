@@ -104,6 +104,11 @@ public class HTTPServerLib extends Thread{
 		//-- check that the file name is not a path out of working directory
 		if(!fileName.contains("/")) {
 			String[] contents = finder(workingDir + "/", fileName);
+			if(contents.length == 0) {
+				System.out.println("Error HTTP 404");
+				writer.println("Error HTTP 404 : File Not Found");
+				return;
+			}
 			for (String c : contents) {
 				path = new File(workingDir + "/" + c);
 				if(path.exists()) {
@@ -123,9 +128,11 @@ public class HTTPServerLib extends Thread{
 							System.out.println(fTitle);
 							fCount ++;
 						}
+
 						writer.println("... <" + c + "> directory's contents has been listed");
 						writer.println();
-					}
+
+					}				
 					//-- if path is a point to the file system then return the file content if it is exist
 					else if(path.isFile()) {
 						FileReader fReader;					
@@ -192,7 +199,7 @@ public class HTTPServerLib extends Thread{
         File dir = new File(dirName);
         return dir.list(new FilenameFilter() { 
                  public boolean accept(File dir, String filename)
-                      { return filename.startsWith(taget); }
+                      { return (filename.equalsIgnoreCase(taget)|| filename.startsWith(taget + ".")); }
         } );
 
     }

@@ -4,9 +4,9 @@ import java.net.*;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.io.*;
-
+ 
 public class HTTPClient {
-	static boolean flag = false;
+     
     /**
      * This is main method and it calls the testHTTPLib method.
      * @param args
@@ -26,12 +26,8 @@ public class HTTPClient {
     	String command = input.nextLine();
     	String[] data = command.split("\\s+");
     	
-    	
-    	if(data.length<=2) {
-    		System.out.println("Your command is wrong...!!! Please enter right command.");
-    	}
     	//check if the command is help command 
-    	else if(data[1].equalsIgnoreCase("help")) {
+    	if(data[1].equalsIgnoreCase("help")) {
     		
     		//check if the command is general help command 
     		if(data.length == 2) {
@@ -63,38 +59,11 @@ public class HTTPClient {
         	}
     	}
     	
-    	else if(data[0].equalsIgnoreCase("httpc") && !data[data.length-1].contains("http")) {
-    		hlib.host = "localhost";
-    		hlib.port = "8000";
-    		hlib.verbos = true;
-    		if(data[1].equalsIgnoreCase("get")) {
-    			hlib.operation = "Get";
-    		}
-    		if(data[1].equalsIgnoreCase("post")) {
-    			hlib.operation = "Post";
-    		}
-    		String[] file = data[data.length-1].trim().split("/");
-    		if(file.length==2) {
-    			hlib.datas.add(file[1]);
-    		}
-    		else if(file.length==0) {
-    			
-    		}
-    		else {
-    			System.out.println("You don't have accesss to read/write any file outside the file server working directory.");
-    		}
-    		try {
-    			hlib.sendHTTPRequest();
-    		} catch (IOException e) {
-    			e.printStackTrace();
-    		}
-    	}
-    	
     	//check if the command is regular get or post command
     	else {
     		String url1 = data[data.length-1];  //it will extract url from the command
         	URL url = new URL(url1);            //it will create url object to get different information from url 
-        	
+        	boolean flag = false;
         	int counter = 0;
         	hlib.verbos = false;
     		
@@ -129,12 +98,7 @@ public class HTTPClient {
 	    				
 	    		}
 	    		hlib.host = url.getHost();
-	    		if(url.getPort()!=-1) {
-	    			hlib.port = String.valueOf(url.getPort());
-	    		}
-	    		else {
-	    			hlib.port = "80";
-	    		}
+	        	hlib.port = "80";
 	            hlib.path = url.getPath();
 	            hlib.addData(url.getQuery());
 	    		
@@ -197,12 +161,7 @@ public class HTTPClient {
 	    				
 	    		}
 	    		hlib.host = url.getHost();
-	    		if(url.getPort()!=-1) {
-	    			hlib.port = String.valueOf(url.getPort());
-	    		}
-	    		else {
-	    			hlib.port = "80";
-	    		}
+	        	hlib.port = "80";
 	            hlib.path = url.getPath();	
 	    	}
 	    	//it checks if any information is missing or command is wrong
@@ -236,27 +195,15 @@ public class HTTPClient {
  
  
 httpc help 
-
 httpc help post
-
 httpc help get
-
 httpc get http://httpbin.org/get?course=networking&assignment=1
-
 httpc get -v http://httpbin.org/get?course=networking&assignment=1
-
-httpc get -v http://localhost:8080/get?course=networking&assignment=1
-
 httpc post -h Content-Type:application/json --d {"Assignment":1} http://httpbin.org/post
-
 httpc post -h Content-Type:application/json --d {"Assignment":1} -d {"Assignment":2} --d {"Assignment":3} http://httpbin.org/post
-
 httpc post -h Content-Type:application/json -f {} -d {} http://httpbin.org/post
-
 httpc post -h Content-Type:application/json -f data.txt http://httpbin.org/post
-
 httpc post -h Content-Type:application/json -d {"Assignment":1} -o result.txt http://httpbin.org/post
-
 httpc get -v -h Content-Type:application/json https://httpstat.us/302
  
  */
