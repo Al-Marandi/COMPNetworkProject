@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Iterator;
+import java.io.FilenameFilter;
 
 public class HTTPServerLib extends Thread{
 	
@@ -98,53 +100,58 @@ public class HTTPServerLib extends Thread{
 	 * @param fileName: name of the file to get the content throw the Get command
 	 */
 	public synchronized void processGetRequest(String fileName) {
-		File path;
-		path = new File(workingDir + "/" + fileName);
-		
+		File path;		
 		//-- check that the file name is not a path out of working directory
-		if(!fileName.contains("/")) {					
-			if(path.exists()) {
-				//-- if path is a point to the system directory then list the files or paths inside that directory
-				if(path.isDirectory()) {		
-					File[] fLists = path.listFiles();
-					String fTitle;
-					int fCount = 1;
-					for (File f : fLists) {
-						if (f.isFile()) {
-							fTitle = "file " + fCount + ": " + f.getName();							
-						} 
-						else {
-							fTitle = "path " + fCount + ": " + f.getName();
+		if(!fileName.contains("/")) {
+			String[] contents = finder(workingDir + "/", fileName);
+			for (String c : contents) {
+				path = new File(workingDir + "/" + c);
+				if(path.exists()) {
+					//-- if path is a point to the system directory then list the files or paths inside that directory
+					if(path.isDirectory()) {		
+						File[] fLists = path.listFiles();
+						String fTitle;
+						int fCount = 1;
+						for (File f : fLists) {
+							if (f.isFile()) {
+								fTitle = "file " + fCount + ": " + f.getName();							
+							} 
+							else {
+								fTitle = "path " + fCount + ": " + f.getName();
+							}
+							writer.println(fTitle);
+							System.out.println(fTitle);
+							fCount ++;
 						}
-						writer.println(fTitle);
-						System.out.println(fTitle);
-						fCount ++;
-					}				
-				}
-				//-- if path is a point to the file system then return the file content if it is exist
-				else if(path.isFile()) {
-					FileReader fReader;					
-					try {						
-							fReader = new FileReader(path);
-							BufferedReader bfReader = new BufferedReader(fReader);
-							String line;					
-							while ((line = bfReader.readLine()) != null) {
-								writer.println(line);
-							}	
-							writer.println("... " + fileName + " has been read completely");
-							bfReader.close();
-					} catch (FileNotFoundException e) {
-						System.out.println("Error HTTP 404");
-						writer.println("Error HTTP 404 : File Not Found");
-					} catch (IOException e) {
-						e.printStackTrace();
+						writer.println("... <" + c + "> directory's contents has been listed");
+						writer.println();
 					}
-	
+					//-- if path is a point to the file system then return the file content if it is exist
+					else if(path.isFile()) {
+						FileReader fReader;					
+						try {						
+								fReader = new FileReader(path);
+								BufferedReader bfReader = new BufferedReader(fReader);
+								String line;					
+								while ((line = bfReader.readLine()) != null) {
+									writer.println(line);
+								}	
+								writer.println("... <" + c + "> has been read completely");
+								writer.println();
+								bfReader.close();
+						} catch (FileNotFoundException e) {
+							System.out.println("Error HTTP 404");
+							writer.println("Error HTTP 404 : File Not Found");
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+		
+					}
+				} 
+				else {
+					System.out.println("Error HTTP 404");
+					writer.println("Error HTTP 404: File not found !!!");
 				}
-			} 
-			else {
-				System.out.println("Error HTTP 404");
-				writer.println("Error HTTP 404: File not found !!!");
 			}
 		}else {
 			System.out.println("access to this directory is denied");
@@ -166,7 +173,7 @@ public class HTTPServerLib extends Thread{
 		
 		//-- check that the file name is not a path out of working directory
 		if(!fileName.contains("/")) {
-			try {
+			try {				
 				fWriter = new PrintWriter(path);
 				fWriter.println(fileContent);
 				writer.println("... " + fileName + " has been created");
@@ -180,5 +187,14 @@ public class HTTPServerLib extends Thread{
 			writer.println("Error: access to this directory is denied !!!");
 		}
 	}
+	
+	public String[] finder( String dirName, String taget){
+        File dir = new File(dirName);
+        return dir.list(new FilenameFilter() { 
+                 public boolean accept(File dir, String filename)
+                      { return filename.startsWith(taget); }
+        } );
+
+    }
 }
 
