@@ -63,7 +63,7 @@ public class HTTPServerLib extends Thread{
 				if(isFMSRequest) {
 					if(request.startsWith("-d")) {
 						content = request.substring(2);
-						System.out.println("content: " + content);
+						System.out.println("Content: " + content);
 					}
 					else if(request.isEmpty()) {
 						break;
@@ -106,7 +106,7 @@ public class HTTPServerLib extends Thread{
 			String[] contents = finder(workingDir + "/", fileName);
 			if(contents.length == 0) {
 				System.out.println("Error HTTP 404");
-				writer.println("Error HTTP 404 : File Not Found");
+				writer.println("Error HTTP 404: File Not Found");
 				return;
 			}
 			for (String c : contents) {
@@ -148,7 +148,7 @@ public class HTTPServerLib extends Thread{
 								bfReader.close();
 						} catch (FileNotFoundException e) {
 							System.out.println("Error HTTP 404");
-							writer.println("Error HTTP 404 : File Not Found");
+							writer.println("Error HTTP 404: File Not Found");
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -161,7 +161,7 @@ public class HTTPServerLib extends Thread{
 				}
 			}
 		}else {
-			System.out.println("access to this directory is denied");
+			System.out.println("Access to this directory is denied");
 			writer.println("Error: access to this directory is denied !!!");
 		}
 	}
@@ -190,7 +190,7 @@ public class HTTPServerLib extends Thread{
 				writer.println("Error HTTP 404: File not found !!!");
 			}
 		}else {
-			System.out.println("access to this directory is denied !!!");
+			System.out.println("Access to this directory is denied !!!");
 			writer.println("Error: access to this directory is denied !!!");
 		}
 	}

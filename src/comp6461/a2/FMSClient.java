@@ -11,12 +11,12 @@ import java.util.ArrayList;
 
 public class FMSClient {
 	
-	static String content, url, query;
-	static boolean headerFlag = false, contentFlag = false;
+	String content, query;
+	boolean headerFlag, contentFlag;
 	private Socket socket;
 	private PrintWriter writer;
 	int port;
-	static ArrayList<String> headers = new ArrayList<>();
+	ArrayList<String> headers = new ArrayList<>();
 	
 	/**
 	 * Client constructor
@@ -26,14 +26,18 @@ public class FMSClient {
 	 * @param content
 	 * @param headers
 	 */
-	public FMSClient(String host, int port, String query, String content, ArrayList<String> headers) {
+	public FMSClient(String host, int port, String query, String content, ArrayList<String> headers, boolean contentFlag, boolean headerFlag) {
+		
 		try 
 		{	
 			this.headers = headers;
 			this.query = query;
 			this.content = content;
+			this.contentFlag = contentFlag;
+			this.headerFlag = headerFlag;
 			socket = new Socket(host, port);
 			System.out.println("Server connected");
+			System.out.println(query);
 //			this.request();
 			
 		} catch (IOException e) {
@@ -44,7 +48,7 @@ public class FMSClient {
 	/**
 	 * It will print the data received from server.
 	 */
-	public void printData() {
+	public synchronized void printData() {
 		try {
 			String print;
 			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -62,7 +66,7 @@ public class FMSClient {
 	 * It will send request to server.
 	 * @throws IOException
 	 */
-	public void request() throws IOException {
+	public synchronized void request() throws IOException {
 		writer= new PrintWriter(socket.getOutputStream());
 		writer.println(query);
 		
@@ -88,8 +92,11 @@ public class FMSClient {
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	public static void main(String args[]) throws IOException, URISyntaxException {
+	public synchronized static void main(String args[]) throws IOException, URISyntaxException {
 		BufferedReader breader = new BufferedReader(new InputStreamReader(System.in));
+		boolean contentFlag = false, headerFlag = false;
+		String content = "", query, url = "";
+		ArrayList<String> headers = new ArrayList<>();
 		String fsClient = breader.readLine();
 		String[] cClient = fsClient.split(" ");
 		if(cClient[0].equals("httpfs")) {
@@ -111,9 +118,8 @@ public class FMSClient {
 		String host = uri.getHost();
 		query = uri.getPath();
 		int port = uri.getPort();
-		System.out.println(query.substring(1));
 		
-		FMSClient client = new FMSClient(host, port, query.substring(1), content, headers);
+		FMSClient client = new FMSClient(host, port, query.substring(1), content, headers, contentFlag, headerFlag);
 		client.request();
 	}
 }
@@ -121,5 +127,7 @@ public class FMSClient {
 
 //httpfs http://localhost:8000/GET/
 //httpfs http://localhost:8000/GET/HTTPClient.java
+//httpfs http://localhost:8000/GET/HTTPLib.txt
 //httpfs http://localhost:8000/GET/test/HTTPClient.java
 //httpfs http://localhost:8000/POST/tes2 -d hello
+//httpfs http://localhost:8000/POST/HTTPLib.txt -d Hi
