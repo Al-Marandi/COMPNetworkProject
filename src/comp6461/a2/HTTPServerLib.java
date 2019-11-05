@@ -134,7 +134,7 @@ public class HTTPServerLib extends Thread{
 
 					}				
 					//-- if path is a point to the file system then return the file content if it is exist
-					else if(path.isFile()) {
+					else if(path.isFile() && (!fileName.isEmpty())) {
 						FileReader fReader;					
 						try {						
 								fReader = new FileReader(path);
@@ -195,11 +195,16 @@ public class HTTPServerLib extends Thread{
 		}
 	}
 	
-	public String[] finder( String dirName, String taget){
+	public String[] finder( String dirName, String target){
+		if(target.isEmpty()) {
+			String[] list = new String[1];
+			list[0] = "";
+			return list;
+		}
         File dir = new File(dirName);
         return dir.list(new FilenameFilter() { 
                  public boolean accept(File dir, String filename)
-                      { return (filename.equalsIgnoreCase(taget)|| filename.startsWith(taget + ".")); }
+                      { return (filename.equalsIgnoreCase(target)|| filename.startsWith(target + ".")); }
         } );
 
     }
