@@ -38,7 +38,7 @@ public class FMSClient {
 			socket = new Socket(host, port);
 			System.out.println("Server connected");
 			System.out.println(query);
-//			this.request();
+			this.request();
 			
 		} catch (IOException e) {
 			System.out.println("Error HTTP 404: Page Not Found");
@@ -120,7 +120,7 @@ public class FMSClient {
 		int port = uri.getPort();
 		
 		FMSClient client = new FMSClient(host, port, query.substring(1), content, headers, contentFlag, headerFlag);
-		client.request();
+//		client.request();
 	}
 }
 
