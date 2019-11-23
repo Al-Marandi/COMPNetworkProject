@@ -7,6 +7,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Iterator;
 import java.io.FilenameFilter;
@@ -23,8 +26,13 @@ public class HTTPServerLib extends Thread{
 	String httpRequest;
 	String content;	
 	boolean isHttpRequest = false;
-	boolean isFMSRequest = false;			
-
+	boolean isFMSRequest = false;
+	
+	DatagramSocket serverUDPsocket;
+	DatagramPacket recivedUDPacket;
+	DatagramPacket sendUDPacket;
+	String routerIP;
+	int routerPort;
 
 	//======================================================================= constructor
 	/**
@@ -36,6 +44,18 @@ public class HTTPServerLib extends Thread{
 		this.serverSocket = socket;
 		this.workingDir = dir;			
 	}
+	
+	/**
+	 * Server constructor
+	 * @param socket: UDP socket for the server
+	 * @param packet: the packet that received by the server
+	 */
+	public HTTPServerLib(DatagramSocket socket, DatagramPacket packet, String routerIP , int routerPort) {
+		this.serverUDPsocket = socket;
+		this.recivedUDPacket = packet;	
+		this.routerIP = routerIP;
+		this.routerPort = routerPort;
+	}
 
 	//======================================================================= main method run in server thread
 	/**
@@ -45,50 +65,78 @@ public class HTTPServerLib extends Thread{
 		try
 		{				
             //-- connect socket reader and writer to the server socket
-			reader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
-			writer = new PrintWriter(serverSocket.getOutputStream(),true);
+			//reader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
+			//writer = new PrintWriter(serverSocket.getOutputStream(),true);
+			
+			
+			
+			//-- get raw data of byte[] from packet
+			byte[] rawData = this.recivedUDPacket.getData();
+			
+			//-- create packet class to extract data
+			Packet recivedPacket = Packet.fromBytes(rawData);
+			
+			//-- get request and create response
+			String payload = new String(recivedPacket.getPayload());
+			String response = payload + " - SERVER RESONSE";
+			
+			//-- convert response to packet
+			Packet responsePacket = new Packet(0, recivedPacket.getSequenceNumber(), this.recivedUDPacket.getAddress(), this.recivedUDPacket.getPort(), response.getBytes());
+			
+			//-- convert response packet to byte[]
+			byte[] responseData = responsePacket.toBytes();
+			
+			//-- create datagram packet from byte[]
+			this.sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(this.routerIP), this.routerPort);
+			
+			//-- send reply to udp port of the sender
+			this.serverUDPsocket.send(this.sendUDPacket);
+			
+			
+			
+			
 			
 			//-- read received request and handle it based on the request type
-			while((request = reader.readLine())!=null) {
-				
-				if(request.endsWith("HTTP/1.0")) {
-					httpRequest = request;
-					isHttpRequest = true;
-				}				
-				else if(request.matches("(GET|POST)/(.*)")) {
-					fmsRequest = request;
-					isFMSRequest = true;
-				}	
-				
-				if(isFMSRequest) {
-					if(request.startsWith("-d")) {
-						content = request.substring(2);
-						System.out.println("Content: " + content);
-					}
-					else if(request.isEmpty()) {
-						break;
-					}
-				}
-				
-			}
+//			while((request = reader.readLine())!=null) {
+//				
+//				if(request.endsWith("HTTP/1.0")) {
+//					httpRequest = request;
+//					isHttpRequest = true;
+//				}				
+//				else if(request.matches("(GET|POST)/(.*)")) {
+//					fmsRequest = request;
+//					isFMSRequest = true;
+//				}	
+//				
+//				if(isFMSRequest) {
+//					if(request.startsWith("-d")) {
+//						content = request.substring(2);
+//						System.out.println("Content: " + content);
+//					}
+//					else if(request.isEmpty()) {
+//						break;
+//					}
+//				}
+//				
+//			}
+//			
+//			if(isFMSRequest) {
+//				System.out.println("server received the request: " + fmsRequest);
+//	
+//				if(fmsRequest.startsWith("GET")) {
+//					this.processGetRequest(fmsRequest.substring(4));
+//				}else if(fmsRequest.startsWith("POST")) {
+//					String fileName = fmsRequest.substring(5);
+//					this.processPostRequest(fileName, content);
+//				}
+//			}		
+//			
+//			writer.println("");
+//			writer.flush();
+//			reader.close();
+//			serverSocket.close();
 			
-			if(isFMSRequest) {
-				System.out.println("server received the request: " + fmsRequest);
-	
-				if(fmsRequest.startsWith("GET")) {
-					this.processGetRequest(fmsRequest.substring(4));
-				}else if(fmsRequest.startsWith("POST")) {
-					String fileName = fmsRequest.substring(5);
-					this.processPostRequest(fileName, content);
-				}
-			}		
-			
-			writer.println("");
-			writer.flush();
-			reader.close();
-			serverSocket.close();
-			
-		}catch (IOException e) {
+		}catch (Exception e) {
 			e.printStackTrace();
 		}
 

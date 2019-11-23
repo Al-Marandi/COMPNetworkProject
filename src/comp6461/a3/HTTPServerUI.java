@@ -6,6 +6,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
@@ -54,18 +56,30 @@ public class HTTPServerUI {
     	
     	//if command is right it will start the sever 
     	if(flag) {
-    		ServerSocket serverSocket = new ServerSocket(port);
+    		//ServerSocket serverSocket = new ServerSocket(port);
+    		    		
+    		byte[] buffer = new byte[1035];
+    		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+    		
         	if(verbos) {
     			System.out.println("Server started at port "+Integer.toString(port));
     		}
     		while(true) {
     			counter++;
-    			Socket serverClient = serverSocket.accept();
+    			//Socket serverClient = serverSocket.accept();
+    			
+    			DatagramSocket clientUDPSocket = new DatagramSocket(port);
+    			// Server waits for the request to come
+				clientUDPSocket.receive(packet);
+				
     			if(verbos) {
     				System.out.println("Client "+counter+" Connected.");
     			}
     			
-    			HTTPServerLib hsl = new HTTPServerLib(serverClient, path);
+    			//HTTPServerLib hsl = new HTTPServerLib(serverClient, path);
+    			String routerIP = "192.168.1.7";
+    			int routerPort = 12;
+    			HTTPServerLib hsl = new HTTPServerLib(clientUDPSocket,packet,routerIP,routerPort);
     			hsl.start();
     		}
     	} 
