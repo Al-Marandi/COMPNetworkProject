@@ -1,4 +1,4 @@
-package comp6461.a2;
+package comp6461.a3;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -12,7 +12,7 @@ import java.util.Scanner;
 
 public class HTTPServerUI {
 	public static int port = 8000;
-	public static String path = "src/comp6461/a2";
+	public static String path = "src/comp6461/a3";
 	public static boolean verbos = false;
 	Socket socket;
 

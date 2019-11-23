@@ -1,4 +1,4 @@
-package comp6461.a2;
+package comp6461.a3;
 
 import java.io.BufferedReader;
 import java.io.IOException;
