@@ -52,7 +52,8 @@ public class HTTPServerLib extends Thread{
 	 */
 	public HTTPServerLib(DatagramSocket socket, DatagramPacket packet, String routerIP , int routerPort) {
 		this.serverUDPsocket = socket;
-		this.recivedUDPacket = packet;	
+		this.recivedUDPacket = new DatagramPacket(packet.getData(), packet.getLength());
+		this.recivedUDPacket.setAddress(packet.getAddress());this.recivedUDPacket.setPort(packet.getPort());
 		this.routerIP = routerIP;
 		this.routerPort = routerPort;
 	}
@@ -69,19 +70,19 @@ public class HTTPServerLib extends Thread{
 			//writer = new PrintWriter(serverSocket.getOutputStream(),true);
 			
 			
-			
 			//-- get raw data of byte[] from packet
 			byte[] rawData = this.recivedUDPacket.getData();
-			
+
 			//-- create packet class to extract data
 			Packet recivedPacket = Packet.fromBytes(rawData);
 			
 			//-- get request and create response
 			String payload = new String(recivedPacket.getPayload());
-			String response = payload + " - SERVER RESONSE";
+			System.out.println("Request received from the client is: "+ payload.trim());
+			String response = payload.trim() + " - SERVER RESONSE";
 			
 			//-- convert response to packet
-			Packet responsePacket = new Packet(0, recivedPacket.getSequenceNumber(), this.recivedUDPacket.getAddress(), this.recivedUDPacket.getPort(), response.getBytes());
+			Packet responsePacket = new Packet(0, recivedPacket.getSequenceNumber(), recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), response.getBytes());
 			
 			//-- convert response packet to byte[]
 			byte[] responseData = responsePacket.toBytes();

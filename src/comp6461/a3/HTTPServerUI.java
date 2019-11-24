@@ -58,29 +58,31 @@ public class HTTPServerUI {
     	if(flag) {
     		//ServerSocket serverSocket = new ServerSocket(port);
     		    		
-    		byte[] buffer = new byte[1035];
+    		byte[] buffer = new byte[Packet.MAX_LEN];
     		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-    		
-        	if(verbos) {
+    		DatagramSocket clientUDPSocket = new DatagramSocket(port);
+        	
+    		if(verbos) {
     			System.out.println("Server started at port "+Integer.toString(port));
     		}
     		while(true) {
     			counter++;
     			//Socket serverClient = serverSocket.accept();
     			
-    			DatagramSocket clientUDPSocket = new DatagramSocket(port);
+    			//DatagramSocket clientUDPSocket = new DatagramSocket(port);
     			// Server waits for the request to come
 				clientUDPSocket.receive(packet);
-				
+
     			if(verbos) {
     				System.out.println("Client "+counter+" Connected.");
     			}
     			
     			//HTTPServerLib hsl = new HTTPServerLib(serverClient, path);
-    			String routerIP = "192.168.1.7";
-    			int routerPort = 12;
+    			String routerIP = "localhost";
+    			int routerPort = 3000;
     			HTTPServerLib hsl = new HTTPServerLib(clientUDPSocket,packet,routerIP,routerPort);
     			hsl.start();
+    			//clientUDPSocket.close();
     		}
     	} 
     	else {
