@@ -1,26 +1,28 @@
 package comp6461.a3;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
 public class FMSConcurrent {
 	static FMSClient c = null;
 	static ArrayList<String> headers = new ArrayList<>();
+	static InetSocketAddress serverAddress = new InetSocketAddress("localhost", 8000);
 	
 	public static void main(String arg[]) {
 		Runnable task1 = () -> {
 //			c = new FMSClient("localhost", 8000, "GET/HTTPLib.txt", null, headers, false, false);
-				c = new FMSClient("localhost", 8000, "POST/HTTPLib.txt", "Hi", headers, true, false);
+				c = new FMSClient(serverAddress, "POST/HTTPLib.txt", "Hi", headers, true, false);
 //				c.request();
 		};
 		
 		Runnable task2 = () -> {
-			c = new FMSClient("localhost", 8000, "POST/HTTPLib.txt", "Hello", headers, true, false);
+			c = new FMSClient(serverAddress, "POST/HTTPLib.txt", "Hello", headers, true, false);
 //				c = new FMSClient("localhost", 8000, "GET/HTTPLib.txt", null, headers, false, false);
 //				c.request();
 		};
 		Runnable task3 = () -> {
-			c = new FMSClient("localhost", 8000, "POST/HTTPLib.txt", "How", headers, true, false);
+			c = new FMSClient(serverAddress, "POST/HTTPLib.txt", "How", headers, true, false);
 //				c = new FMSClient("localhost", 8000, "GET/HTTPLib.txt", null, headers, false, false);
 //				c.request();
 		};
