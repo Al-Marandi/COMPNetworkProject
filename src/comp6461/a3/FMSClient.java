@@ -102,12 +102,15 @@ public class FMSClient {
 			byte [] buffer = new byte[Packet.MAX_LEN];
 			DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
 			
+			System.out.println("Reply received from the server is: ");
+			while(true) {
 			//Client waits until the reply is received-----------------------------------------------------------------------
 			aSocket.receive(reply);//reply received and will populate reply packet now.
 			byte[] rawData = reply.getData();
 			Packet replyPacket = Packet.fromBytes(rawData);
 			String payload = new String(replyPacket.getPayload());
-			System.out.println("Reply received from the server is: "+ payload.trim());//print reply message after converting it to a string from byte
+			System.out.print(payload.trim());//print reply message after converting it to a string from byte
+			}
 			
 		}
 		catch(SocketException e){

@@ -80,7 +80,7 @@ public class HTTPServerUI {
     			//HTTPServerLib hsl = new HTTPServerLib(serverClient, path);
     			String routerIP = "localhost";
     			int routerPort = 3000;
-    			HTTPServerLib hsl = new HTTPServerLib(clientUDPSocket,packet,routerIP,routerPort);
+    			HTTPServerLib hsl = new HTTPServerLib(clientUDPSocket, packet, routerIP, routerPort, path);
     			hsl.start();
     			//clientUDPSocket.close();
     		}
