@@ -79,11 +79,7 @@ public class HTTPServerLib extends Thread{
 			//-- create packet class to extract data
 			Packet recivedPacket = Packet.fromBytes(rawData);
 			
-//			//-- get request and create response
-//			String payload = new String(recivedPacket.getPayload());
-//			System.out.println("Request received from the client is: "+ payload.trim());
-//			String response = payload.trim() + " - SERVER RESONSE";
-			
+			//-- get request and create response			
 			String requestPayload = new String(recivedPacket.getPayload()).trim();
 			
 			
@@ -133,7 +129,7 @@ public class HTTPServerLib extends Thread{
 			
 			
 
-		for(String request : requestPayload.split("\r\n")) {
+		for(String request : requestPayload.split("\n")) {
 					
 			if(request.endsWith("HTTP/1.0")) {
 				httpRequest = request;
@@ -147,7 +143,6 @@ public class HTTPServerLib extends Thread{
 			if(isFMSRequest) {
 				if(request.startsWith("-d")) {
 					content = request.substring(2);
-					System.out.println("Content: " + content);
 				}
 				else if(request.isEmpty()) {
 					break;
@@ -300,7 +295,6 @@ public class HTTPServerLib extends Thread{
 		File path;
 		PrintWriter fWriter;		
 		path = new File(workingDir + "/" + fileName);
-		
 		//-- check that the file name is not a path out of working directory
 		if(!fileName.contains("/")) {
 			try {				

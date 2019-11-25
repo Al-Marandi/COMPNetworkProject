@@ -83,6 +83,8 @@ public class HTTPServerUI {
     			HTTPServerLib hsl = new HTTPServerLib(clientUDPSocket, packet, routerIP, routerPort, path);
     			hsl.start();
     			//clientUDPSocket.close();
+    			buffer = new byte[Packet.MAX_LEN]; 
+    			packet = new DatagramPacket(buffer, buffer.length);
     		}
     	} 
     	else {
