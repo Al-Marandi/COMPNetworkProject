@@ -12,17 +12,32 @@ public class FMSConcurrent {
 	public static void main(String arg[]) {
 		Runnable task1 = () -> {
 //			c = new FMSClient("localhost", 8000, "GET/HTTPLib.txt", null, headers, false, false);
-				c = new FMSClient(serverAddress, "POST/HTTPLib.txt", "Hi", headers, true, false);
+				try {
+					c = new FMSClient(serverAddress, "POST/HTTPLib.txt", "Hi", headers, true, false);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 //				c.request();
 		};
 		
 		Runnable task2 = () -> {
-			c = new FMSClient(serverAddress, "POST/HTTPLib.txt", "Hello", headers, true, false);
+			try {
+				c = new FMSClient(serverAddress, "POST/HTTPLib.txt", "Hello", headers, true, false);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 //				c = new FMSClient("localhost", 8000, "GET/HTTPLib.txt", null, headers, false, false);
 //				c.request();
 		};
 		Runnable task3 = () -> {
-			c = new FMSClient(serverAddress, "POST/HTTPLib.txt", "How", headers, true, false);
+			try {
+				c = new FMSClient(serverAddress, "POST/HTTPLib.txt", "How", headers, true, false);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 //				c = new FMSClient("localhost", 8000, "GET/HTTPLib.txt", null, headers, false, false);
 //				c.request();
 		};

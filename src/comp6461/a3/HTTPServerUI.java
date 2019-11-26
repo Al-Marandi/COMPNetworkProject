@@ -1,16 +1,12 @@
 package comp6461.a3;
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.ServerSocket;
+import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class HTTPServerUI {
 	public static int port = 8000;
@@ -27,14 +23,12 @@ public class HTTPServerUI {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     	String command = br.readLine();
     	String[] data = command.split("\\s+");
-    	int counter = 0;
     	boolean flag = false;
     	
     	//checks command
     	if(data[0].equalsIgnoreCase("httpfs")) {
     		flag = true;
     		for(int i=1;i<data.length;i++) {
-    			int index = 0;
     			//extract different information from command
     			switch(data[i]) {
     			case "-v":
@@ -66,23 +60,48 @@ public class HTTPServerUI {
     			System.out.println("Server started at port "+Integer.toString(port));
     		}
     		while(true) {
-    			counter++;
-    			//Socket serverClient = serverSocket.accept();
-    			
-    			//DatagramSocket clientUDPSocket = new DatagramSocket(port);
-    			// Server waits for the request to come
 				clientUDPSocket.receive(packet);
-
-    			if(verbos) {
-    				System.out.println("Client "+counter+" Connected.");
-    			}
     			
-    			//HTTPServerLib hsl = new HTTPServerLib(serverClient, path);
     			String routerIP = "localhost";
     			int routerPort = 3000;
-    			HTTPServerLib hsl = new HTTPServerLib(clientUDPSocket, packet, routerIP, routerPort, path);
-    			hsl.start();
-    			//clientUDPSocket.close();
+    			
+    			byte[] rawData = packet.getData();
+
+    			//-- create packet class to extract data
+    			Packet recivedPacket = Packet.fromBytes(rawData);
+    			
+    			//-- get request and create response			
+    			String requestPayload = new String(recivedPacket.getPayload()).trim();
+    			System.out.println("Request received from the client is : ");
+    			
+    			if(recivedPacket.getType() == 1 && requestPayload.trim().equalsIgnoreCase("SYN")) {
+    				System.out.println(requestPayload);
+    				byte [] message = "SYN-ACK".toString().trim().getBytes();
+    				// send payload
+    				//-- convert response to packet
+    				Packet responsePacket = new Packet(3, recivedPacket.getSequenceNumber(), recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), message);
+    				
+    				//-- convert response packet to byte[]
+    				byte[] responseData = responsePacket.toBytes();
+    				
+    				//-- create datagram packet from byte[]
+    				DatagramPacket sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(routerIP), routerPort);
+    				
+    				//-- send reply to udp port of the sender
+    				clientUDPSocket.send(sendUDPacket);
+    			}
+    			
+    			else if(recivedPacket.getType() == 0 && requestPayload.trim().equalsIgnoreCase("ACK")) {
+        			System.out.println(requestPayload);
+    				System.out.println("Connection Established between client and server.");
+    			}
+    			
+    			else if(recivedPacket.getType() == 8) {
+        			System.out.println(requestPayload);
+    				HTTPServerLib hsl = new HTTPServerLib(clientUDPSocket, packet, routerIP, routerPort, path);
+        			hsl.start();
+    			}
+    			
     			buffer = new byte[Packet.MAX_LEN]; 
     			packet = new DatagramPacket(buffer, buffer.length);
     		}

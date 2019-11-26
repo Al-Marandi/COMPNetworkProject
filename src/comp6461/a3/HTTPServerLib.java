@@ -5,13 +5,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Iterator;
 import java.io.FilenameFilter;
 
 public class HTTPServerLib extends Thread{
@@ -28,7 +26,7 @@ public class HTTPServerLib extends Thread{
 	boolean isHttpRequest = false;
 	boolean isFMSRequest = false;
 	
-	DatagramSocket serverUDPsocket;
+	DatagramSocket serverUDPsocket; //Question Is it client socket or server? 
 	DatagramPacket recivedUDPacket;
 	DatagramPacket sendUDPacket;
 	String routerIP;
@@ -152,8 +150,6 @@ public class HTTPServerLib extends Thread{
 		}
 		
 		if(isFMSRequest) {
-			System.out.println("server received the request: " + fmsRequest);
-
 			if(fmsRequest.startsWith("GET")) {
 				this.processGetRequest(fmsRequest.substring(4));
 			}else if(fmsRequest.startsWith("POST")) {

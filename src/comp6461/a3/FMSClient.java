@@ -3,13 +3,10 @@ package comp6461.a3;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,16 +17,14 @@ public class FMSClient {
 	String content, query;
 	boolean headerFlag, contentFlag;
 	private Socket socket;
-	private PrintWriter writer;
 	int port;
 	StringBuilder request;
-//	static InetAddress routerAddress = InetAddress.getByName("localhost"); 
-//	static int routerPort = 3000;
 	static InetSocketAddress routerAddress = new InetSocketAddress("localhost", 3000);	
 	static InetSocketAddress serverAddress;
-//	InetAddress serverAddress; 			
-//	static int serverPort;
 	ArrayList<String> headers = new ArrayList<>();
+	int DataType = 8, ACKType = 0, SYNType = 1, SYNACKType = 2, NAKType = 3;
+	String ACKMessage = "ACK", SYNMessage = "SYN", SYNACKMessage = "SYN-ACK", NAKMessage = "NAK";
+	  
 	
 	/**
 	 * Client constructor
@@ -38,21 +33,16 @@ public class FMSClient {
 	 * @param query
 	 * @param content
 	 * @param headers
+	 * @throws IOException 
 	 */
-	public FMSClient(InetSocketAddress serverAddress, String query, String content, ArrayList<String> headers, boolean contentFlag, boolean headerFlag) {
-		try 
-		{	
-			this.serverAddress = serverAddress;
-			this.content = content;
-			this.query = query;
-			this.headers = headers;
-			this.contentFlag = contentFlag;
-			this.headerFlag = headerFlag;
-			this.request();
-			
-		} catch (IOException e) {
-			System.out.println("Error HTTP 404: Page Not Found");
-		}
+	public FMSClient(InetSocketAddress serverAddress, String query, String content, ArrayList<String> headers, boolean contentFlag, boolean headerFlag) throws IOException {
+		FMSClient.serverAddress = serverAddress;
+		this.content = content;
+		this.query = query;
+		this.headers = headers;
+		this.contentFlag = contentFlag;
+		this.headerFlag = headerFlag;
+		this.threeWayHandshake();
 	}	
 	
 	/**
@@ -71,6 +61,46 @@ public class FMSClient {
 		}
 		
 	}
+	
+	public synchronized void threeWayHandshake() throws IOException {
+		DatagramSocket aSocket = null;
+		try { 
+			aSocket = new DatagramSocket();
+			
+			Packet responsePacket = new Packet(SYNType, 1, serverAddress.getAddress(), serverAddress.getPort(), SYNMessage.getBytes());
+			byte[] requestData = responsePacket.toBytes();
+			DatagramPacket requestUDPacket = new DatagramPacket(requestData, requestData.length, routerAddress.getAddress(), routerAddress.getPort());
+			aSocket.send(requestUDPacket);
+			byte [] buffer = new byte[Packet.MAX_LEN];
+			DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+			
+			System.out.println("Reply received from the server is : ");
+			aSocket.receive(reply);
+			byte[] rawData = reply.getData();
+			Packet replyPacket = Packet.fromBytes(rawData);
+			String payload = new String(replyPacket.getPayload());
+			System.out.print(payload.trim());
+			
+			if(payload.trim().equalsIgnoreCase("SYN-ACK")) {
+				responsePacket = new Packet(ACKType, 1, serverAddress.getAddress(), serverAddress.getPort(), ACKMessage.getBytes());
+				requestData = responsePacket.toBytes();
+				requestUDPacket = new DatagramPacket(requestData, requestData.length, routerAddress.getAddress(), routerAddress.getPort());
+				aSocket.send(requestUDPacket);
+				this.request();
+			}
+		}
+		catch(SocketException e){
+			System.out.println("Socket: "+e.getMessage());
+		}
+		catch(IOException e){
+			e.printStackTrace();
+			System.out.println("IO: "+e.getMessage());
+		}
+		finally{
+			if(aSocket != null) aSocket.close();//now all resources used by the socket are returned to the OS, so that there is no
+												//resource leakage, therefore, close the socket after it's use is completed to release resources.
+		}	
+	}
 
 	/**
 	 * It will send request to server.
@@ -79,7 +109,6 @@ public class FMSClient {
 	public synchronized void request() throws IOException {
 		DatagramSocket aSocket = null; 	
 		try{
-			System.out.println("Client started........");
 			request = new StringBuilder();
 			request.append(query+"\n");
 			if(headerFlag) {
@@ -94,7 +123,7 @@ public class FMSClient {
 			aSocket = new DatagramSocket();
 			byte [] message = request.toString().trim().getBytes();
 			
-			Packet responsePacket = new Packet(0, 1, serverAddress.getAddress(), serverAddress.getPort(), message);
+			Packet responsePacket = new Packet(DataType, 1, serverAddress.getAddress(), serverAddress.getPort(), message);
 			byte[] requestData = responsePacket.toBytes();
 			DatagramPacket requestUDPacket = new DatagramPacket(requestData, requestData.length, routerAddress.getAddress(), routerAddress.getPort());
 			aSocket.send(requestUDPacket);
@@ -104,12 +133,12 @@ public class FMSClient {
 			
 			System.out.println("Reply received from the server is: ");
 			while(true) {
-			//Client waits until the reply is received-----------------------------------------------------------------------
-			aSocket.receive(reply);//reply received and will populate reply packet now.
-			byte[] rawData = reply.getData();
-			Packet replyPacket = Packet.fromBytes(rawData);
-			String payload = new String(replyPacket.getPayload());
-			System.out.print(payload.trim());//print reply message after converting it to a string from byte
+				//Client waits until the reply is received-----------------------------------------------------------------------
+				aSocket.receive(reply);//reply received and will populate reply packet now.
+				byte[] rawData = reply.getData();
+				Packet replyPacket = Packet.fromBytes(rawData);
+				String payload = new String(replyPacket.getPayload());
+				System.out.print(payload.trim());//print reply message after converting it to a string from byte
 			}
 			
 		}
