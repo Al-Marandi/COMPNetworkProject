@@ -175,7 +175,8 @@ public class HTTPServerLib extends Thread{
 			if(j == 200 || i == responseBytes.length -1) {				
 				// send payload
 				//-- convert response to packet
-				Packet responsePacket = new Packet(0, recivedPacket.getSequenceNumber(), recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), payload);
+				//increase sequence number
+				Packet responsePacket = new Packet(0, recivedPacket.getSequenceNumber()+1, recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), payload);
 				
 				//-- convert response packet to byte[]
 				byte[] responseData = responsePacket.toBytes();

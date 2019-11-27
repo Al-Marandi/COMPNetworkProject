@@ -75,11 +75,12 @@ public class HTTPServerUI {
     			System.out.println("Request received from the client is : ");
     			
     			if(recivedPacket.getType() == 1 && requestPayload.trim().equalsIgnoreCase("SYN")) {
-    				System.out.println(requestPayload);
+    				System.out.println(requestPayload +"        "+recivedPacket.getSequenceNumber());
     				byte [] message = "SYN-ACK".toString().trim().getBytes();
     				// send payload
     				//-- convert response to packet
-    				Packet responsePacket = new Packet(3, recivedPacket.getSequenceNumber(), recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), message);
+    				//increase sequence number
+    				Packet responsePacket = new Packet(3, recivedPacket.getSequenceNumber()+1, recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), message);
     				
     				//-- convert response packet to byte[]
     				byte[] responseData = responsePacket.toBytes();
@@ -92,12 +93,12 @@ public class HTTPServerUI {
     			}
     			
     			else if(recivedPacket.getType() == 0 && requestPayload.trim().equalsIgnoreCase("ACK")) {
-        			System.out.println(requestPayload);
+    				System.out.println(requestPayload +"        "+recivedPacket.getSequenceNumber());
     				System.out.println("Connection Established between client and server.");
     			}
     			
     			else if(recivedPacket.getType() == 8) {
-        			System.out.println(requestPayload);
+    				System.out.println(requestPayload +"        "+recivedPacket.getSequenceNumber());
     				HTTPServerLib hsl = new HTTPServerLib(clientUDPSocket, packet, routerIP, routerPort, path);
         			hsl.start();
     			}
