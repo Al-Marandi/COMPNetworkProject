@@ -54,13 +54,13 @@ public class HTTPServerUI {
     		    		
     		byte[] buffer = new byte[Packet.MAX_LEN];
     		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-    		DatagramSocket clientUDPSocket = new DatagramSocket(port);
+    		DatagramSocket serverUDPSocket = new DatagramSocket(port);
         	
     		if(verbos) {
     			System.out.println("Server started at port "+Integer.toString(port));
     		}
     		while(true) {
-				clientUDPSocket.receive(packet);
+				serverUDPSocket.receive(packet);
     			
     			String routerIP = "localhost";
     			int routerPort = 3000;
@@ -89,7 +89,7 @@ public class HTTPServerUI {
     				DatagramPacket sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(routerIP), routerPort);
     				
     				//-- send reply to udp port of the sender
-    				clientUDPSocket.send(sendUDPacket);
+    				serverUDPSocket.send(sendUDPacket);
     			}
     			
     			else if(recivedPacket.getType() == 0 && requestPayload.trim().equalsIgnoreCase("ACK")) {
@@ -99,7 +99,7 @@ public class HTTPServerUI {
     			
     			else if(recivedPacket.getType() == 8) {
     				System.out.println(requestPayload +"        "+recivedPacket.getSequenceNumber());
-    				HTTPServerLib hsl = new HTTPServerLib(clientUDPSocket, packet, routerIP, routerPort, path);
+    				HTTPServerLib hsl = new HTTPServerLib(serverUDPSocket, packet, routerIP, routerPort, path);
         			hsl.start();
     			}
     			
