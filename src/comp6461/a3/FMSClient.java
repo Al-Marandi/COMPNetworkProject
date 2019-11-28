@@ -22,9 +22,7 @@ public class FMSClient {
 	static InetSocketAddress routerAddress = new InetSocketAddress("localhost", 3000);	
 	static InetSocketAddress serverAddress;
 	ArrayList<String> headers = new ArrayList<>();
-	int DataType = 8, ACKType = 0, SYNType = 1, SYNACKType = 2, NAKType = 3;
-	String ACKMessage = "ACK", SYNMessage = "SYN", SYNACKMessage = "SYN-ACK", NAKMessage = "NAK";
-	int initialSequenceNumber = 100, accumulatedSequenceNumber = 0;
+	int sequenceNumber = 100;
 	  
 	
 	/**
@@ -67,11 +65,12 @@ public class FMSClient {
 		DatagramSocket aSocket = null;
 		try { 
 			aSocket = new DatagramSocket();
-			
-			Packet responsePacket = new Packet(SYNType, initialSequenceNumber, serverAddress.getAddress(), serverAddress.getPort(), SYNMessage.getBytes());
+			String message = "";
+			Packet responsePacket = new Packet(Packet.Type.SYNType.getPacketType(), sequenceNumber, serverAddress.getAddress(), serverAddress.getPort(), message.getBytes());
 			byte[] requestData = responsePacket.toBytes();
 			DatagramPacket requestUDPacket = new DatagramPacket(requestData, requestData.length, routerAddress.getAddress(), routerAddress.getPort());
 			aSocket.send(requestUDPacket);
+			this.sequenceNumber++;
 			byte [] buffer = new byte[Packet.MAX_LEN];
 			DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
 			
@@ -80,10 +79,11 @@ public class FMSClient {
 			byte[] rawData = reply.getData();
 			Packet replyPacket = Packet.fromBytes(rawData);
 			String payload = new String(replyPacket.getPayload());
+			long seqNumber = replyPacket.getSequenceNumber();
 			System.out.println(payload.trim()+"        "+replyPacket.getSequenceNumber());
 			
-			if(payload.trim().equalsIgnoreCase("SYN-ACK")) {
-				responsePacket = new Packet(ACKType, replyPacket.getSequenceNumber(), serverAddress.getAddress(), serverAddress.getPort(), ACKMessage.getBytes());
+			if(replyPacket.getType() == Packet.Type.SYNACKType.getPacketType() && payload.trim().equalsIgnoreCase("SYN-ACK:"+this.sequenceNumber)) {
+				responsePacket = new Packet(Packet.Type.ACKType.getPacketType(), replyPacket.getSequenceNumber(), serverAddress.getAddress(), serverAddress.getPort(), ("ACK:"+seqNumber+1).getBytes());
 				requestData = responsePacket.toBytes();
 				requestUDPacket = new DatagramPacket(requestData, requestData.length, routerAddress.getAddress(), routerAddress.getPort());
 				aSocket.send(requestUDPacket);
@@ -124,7 +124,7 @@ public class FMSClient {
 			aSocket = new DatagramSocket();
 			byte [] message = request.toString().trim().getBytes();
 			
-			Packet responsePacket = new Packet(DataType, accumulatedSequenceNumber, serverAddress.getAddress(), serverAddress.getPort(), message);
+			Packet responsePacket = new Packet(Packet.Type.DataType.getPacketType(), sequenceNumber, serverAddress.getAddress(), serverAddress.getPort(), message);
 			byte[] requestData = responsePacket.toBytes();
 			DatagramPacket requestUDPacket = new DatagramPacket(requestData, requestData.length, routerAddress.getAddress(), routerAddress.getPort());
 			aSocket.send(requestUDPacket);

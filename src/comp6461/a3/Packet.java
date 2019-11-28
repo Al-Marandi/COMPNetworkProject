@@ -11,6 +11,19 @@ import java.nio.ByteOrder;
  * As we don't have unsigned types in Java, we can achieve this by using a larger type.
  */
 public class Packet {
+	public enum Type {
+		DataType(8), ACKType(0), SYNType(1), SYNACKType(2), NAKType(3);
+	   
+	    private int ptype;
+
+	    Type(int type) {
+	        this.ptype = type;
+	    }
+
+	    public int getPacketType() {
+	        return ptype;
+	    }
+	}
 
     public static final int MIN_LEN = 11;
     public static final int MAX_LEN = 11 + 1024;
