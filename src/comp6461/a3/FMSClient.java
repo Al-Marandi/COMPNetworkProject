@@ -83,11 +83,11 @@ public class FMSClient {
 			System.out.println(payload.trim()+"        "+replyPacket.getSequenceNumber());
 			
 			if(replyPacket.getType() == Packet.Type.SYNACKType.getPacketType() && payload.trim().equalsIgnoreCase("SYN-ACK:"+this.sequenceNumber)) {
-				responsePacket = new Packet(Packet.Type.ACKType.getPacketType(), replyPacket.getSequenceNumber(), serverAddress.getAddress(), serverAddress.getPort(), ("ACK:"+seqNumber+1).getBytes());
+				responsePacket = new Packet(Packet.Type.ACKType.getPacketType(), replyPacket.getSequenceNumber(), serverAddress.getAddress(), serverAddress.getPort(), ("ACK:"+(seqNumber+1)).getBytes());
 				requestData = responsePacket.toBytes();
 				requestUDPacket = new DatagramPacket(requestData, requestData.length, routerAddress.getAddress(), routerAddress.getPort());
 				aSocket.send(requestUDPacket);
-				this.request();
+				this.request(aSocket);
 			}
 		}
 		catch(SocketException e){
@@ -107,8 +107,8 @@ public class FMSClient {
 	 * It will send request to server.
 	 * @throws IOException
 	 */
-	public synchronized void request() throws IOException {
-		DatagramSocket aSocket = null; 	
+	public synchronized void request(DatagramSocket aSocket) throws IOException {
+		//DatagramSocket aSocket = null; 	
 		try{
 			request = new StringBuilder();
 			request.append(query+"\n");
@@ -121,7 +121,7 @@ public class FMSClient {
 				request.append("-d"+content+"\n");
 			}
 			request.append("\r\n");
-			aSocket = new DatagramSocket();
+			//aSocket = new DatagramSocket();
 			byte [] message = request.toString().trim().getBytes();
 			
 			Packet responsePacket = new Packet(Packet.Type.DataType.getPacketType(), sequenceNumber, serverAddress.getAddress(), serverAddress.getPort(), message);

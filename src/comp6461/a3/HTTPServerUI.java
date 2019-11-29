@@ -7,12 +7,14 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Hashtable;
 
 public class HTTPServerUI {
 	public static int port = 8000;
 	public static String path = "src/comp6461/a3";
 	public static boolean verbos = false;
 	Socket socket;
+	public static Hashtable<String,DatagramSocket> clientServerMapTable = new Hashtable<String,DatagramSocket>();
 
 	/**
 	 * This is main method and it will start HTTPServerLib Thread.
@@ -50,58 +52,64 @@ public class HTTPServerUI {
     	
     	//if command is right it will start the sever 
     	if(flag) {
-    		//ServerSocket serverSocket = new ServerSocket(port);
+    		
+    		String routerIP = "localhost";
+			int routerPort = 3000;   
+			int serversPort = 5000;
     		    		
     		byte[] buffer = new byte[Packet.MAX_LEN];
     		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-    		DatagramSocket serverUDPSocket = new DatagramSocket(port);
+    		DatagramSocket serverUISocket = new DatagramSocket(port);
         	
     		if(verbos) {
     			System.out.println("Server started at port "+Integer.toString(port));
     		}
+    		
     		while(true) {
-				serverUDPSocket.receive(packet);
-    			
-    			String routerIP = "localhost";
-    			int routerPort = 3000;
-    			
-    			byte[] rawData = packet.getData();
+
+    			serverUISocket.receive(packet);    			    			   			
 
     			//-- create packet class to extract data
+    			byte[] rawData = packet.getData();
     			Packet recivedPacket = Packet.fromBytes(rawData);
     			
-    			//-- get request and create response			
-    			String requestPayload = new String(recivedPacket.getPayload()).trim();
-    			System.out.println("Request received from the client is : ");
+    			//-- generate client key to map it to the pre-existance server
+    			String clientKey = recivedPacket.getPeerAddress().getHostAddress() + ":" + recivedPacket.getPeerPort();
+//    			System.out.println("recivedPacket.getType() : " + recivedPacket.getType());
+//    			System.out.println("recivedPacket.getPayload(): " + new String(recivedPacket.getPayload()).trim());
     			
-    			if(recivedPacket.getType() == 1 && requestPayload.trim().equalsIgnoreCase("SYN")) {
-    				System.out.println(requestPayload +"        "+recivedPacket.getSequenceNumber());
-    				byte [] message = "SYN-ACK".toString().trim().getBytes();
-    				// send payload
-    				//-- convert response to packet
-    				//increase sequence number
-    				Packet responsePacket = new Packet(3, recivedPacket.getSequenceNumber()+1, recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), message);
-    				
-    				//-- convert response packet to byte[]
-    				byte[] responseData = responsePacket.toBytes();
+    			HTTPServerLib hsl;
+    			
+    			if(!clientServerMapTable.containsKey(clientKey)) {
+//    				System.out.println("clientKey is created: " + clientKey);
+    				DatagramSocket serverSocket = new DatagramSocket(serversPort++);
+    				hsl = new HTTPServerLib(serverSocket, routerIP, routerPort, path);
+    				clientServerMapTable.put(clientKey, serverSocket);
+    				hsl.start();
     				
     				//-- create datagram packet from byte[]
-    				DatagramPacket sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(routerIP), routerPort);
+    				DatagramPacket sendUDPacket = new DatagramPacket(packet.getData(), packet.getData().length, InetAddress.getByName("localhost"), serverSocket.getLocalPort());
     				
     				//-- send reply to udp port of the sender
-    				serverUDPSocket.send(sendUDPacket);
+    				serverUISocket.send(sendUDPacket);
+    				
+    			}
+    			else {
+//    				System.out.println("clientKey is exist: " + clientKey);
+    				
+    				DatagramSocket serverSocket = clientServerMapTable.get(clientKey); 
+//    				System.out.println("serverSocket.getLocalPort(): " + serverSocket.getLocalPort());
+    				
+    				//-- create datagram packet from byte[]
+    				DatagramPacket sendUDPacket = new DatagramPacket(packet.getData(), packet.getData().length, InetAddress.getByName("localhost"), serverSocket.getLocalPort());
+    				
+    				//-- send reply to udp port of the sender
+    				serverUISocket.send(sendUDPacket);
+    			
     			}
     			
-    			else if(recivedPacket.getType() == 0 && requestPayload.trim().equalsIgnoreCase("ACK")) {
-    				System.out.println(requestPayload +"        "+recivedPacket.getSequenceNumber());
-    				System.out.println("Connection Established between client and server.");
-    			}
     			
-    			else if(recivedPacket.getType() == 8) {
-    				System.out.println(requestPayload +"        "+recivedPacket.getSequenceNumber());
-    				HTTPServerLib hsl = new HTTPServerLib(serverUDPSocket, packet, routerIP, routerPort, path);
-        			hsl.start();
-    			}
+    			
     			
     			buffer = new byte[Packet.MAX_LEN]; 
     			packet = new DatagramPacket(buffer, buffer.length);

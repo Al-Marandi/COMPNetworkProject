@@ -26,12 +26,17 @@ public class HTTPServerLib extends Thread{
 	boolean isHttpRequest = false;
 	boolean isFMSRequest = false;
 	
-	DatagramSocket serverUDPsocket; //Question Is it client socket or server? 
-	DatagramPacket recivedUDPacket;
+	DatagramSocket serverUDPsocket;
+//	DatagramPacket recivedUDPacket;
 	DatagramPacket sendUDPacket;
 	String routerIP;
 	int routerPort;
 	String response;
+	long seqNumber;
+	long clientSeqNumber;
+	boolean handshakingPhaseIDone;
+	boolean handshakingPhaseIIDone;
+	int payloadMaxSize = 1013;
 
 	//======================================================================= constructor
 	/**
@@ -49,14 +54,17 @@ public class HTTPServerLib extends Thread{
 	 * @param socket: UDP socket for the server
 	 * @param packet: the packet that received by the server
 	 */
-	public HTTPServerLib(DatagramSocket socket, DatagramPacket packet, String routerIP , int routerPort, String dir) {
+	public HTTPServerLib(DatagramSocket socket, String routerIP , int routerPort, String dir) {
 		this.serverUDPsocket = socket;
-		this.recivedUDPacket = new DatagramPacket(packet.getData(), packet.getLength());
-		this.recivedUDPacket.setAddress(packet.getAddress());this.recivedUDPacket.setPort(packet.getPort());
+//		this.recivedUDPacket = new DatagramPacket(packet.getData(), packet.getLength());
+//		this.recivedUDPacket.setAddress(packet.getAddress());this.recivedUDPacket.setPort(packet.getPort());
 		this.routerIP = routerIP;
 		this.routerPort = routerPort;
 		this.response = "";
 		this.workingDir = dir;
+		this.seqNumber = 1000;
+		this.handshakingPhaseIDone = false;
+		this.handshakingPhaseIIDone = false;
 	}
 
 	//======================================================================= main method run in server thread
@@ -65,134 +73,117 @@ public class HTTPServerLib extends Thread{
 	 */
 	public void run(){
 		try
-		{				
-            //-- connect socket reader and writer to the server socket
-			//reader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
-			//writer = new PrintWriter(serverSocket.getOutputStream(),true);
-			
+		{								
+		
+		byte[] buffer = new byte[Packet.MAX_LEN];
+		DatagramPacket recivedUDPacket = new DatagramPacket(buffer, buffer.length);
+		
+		while(true) {
+						
+			this.serverUDPsocket.receive(recivedUDPacket);
 			
 			//-- get raw data of byte[] from packet
-			byte[] rawData = this.recivedUDPacket.getData();
-
+			byte[] rawData = recivedUDPacket.getData();
+			
 			//-- create packet class to extract data
 			Packet recivedPacket = Packet.fromBytes(rawData);
 			
 			//-- get request and create response			
 			String requestPayload = new String(recivedPacket.getPayload()).trim();
 			
-			
-			
-			
-			//-- read received request and handle it based on the request type
-//			while((request = reader.readLine())!=null) {
-//				
-//				if(request.endsWith("HTTP/1.0")) {
-//					httpRequest = request;
-//					isHttpRequest = true;
-//				}				
-//				else if(request.matches("(GET|POST)/(.*)")) {
-//					fmsRequest = request;
-//					isFMSRequest = true;
-//				}	
-//				
-//				if(isFMSRequest) {
-//					if(request.startsWith("-d")) {
-//						content = request.substring(2);
-//						System.out.println("Content: " + content);
-//					}
-//					else if(request.isEmpty()) {
-//						break;
-//					}
-//				}
-//				
-//			}
-//			
-//			if(isFMSRequest) {
-//				System.out.println("server received the request: " + fmsRequest);
-//	
-//				if(fmsRequest.startsWith("GET")) {
-//					this.processGetRequest(fmsRequest.substring(4));
-//				}else if(fmsRequest.startsWith("POST")) {
-//					String fileName = fmsRequest.substring(5);
-//					this.processPostRequest(fileName, content);
-//				}
-//			}		
-//			
-//			writer.println("");
-//			writer.flush();
-//			reader.close();
-//			serverSocket.close();
-			
-			
-			
-			
-
-		for(String request : requestPayload.split("\n")) {
-					
-			if(request.endsWith("HTTP/1.0")) {
-				httpRequest = request;
-				isHttpRequest = true;
-			}				
-			else if(request.matches("(GET|POST)/(.*)")) {
-				fmsRequest = request;
-				isFMSRequest = true;
-			}	
-			
-			if(isFMSRequest) {
-				if(request.startsWith("-d")) {
-					content = request.substring(2);
-				}
-				else if(request.isEmpty()) {
-					break;
-				}
-			}
-			
-		}
+			if(recivedPacket.getType() == Packet.Type.SYNType.getPacketType()) {
+				
+				this.handshakingPhaseIDone = false;
+				this.handshakingPhaseIIDone = false;
+				
+				this.clientSeqNumber = recivedPacket.getSequenceNumber() + 1;
+				byte [] message = ("SYN-ACK:" + this.clientSeqNumber).toString().trim().getBytes();
 		
-		if(isFMSRequest) {
-			if(fmsRequest.startsWith("GET")) {
-				this.processGetRequest(fmsRequest.substring(4));
-			}else if(fmsRequest.startsWith("POST")) {
-				String fileName = fmsRequest.substring(5);
-				this.processPostRequest(fileName, content);
-			}
-		}		
-//		
-//		writer.println("");
-//		writerPrintln("");
-//		System.out.println("response: ");
-//		System.out.println(this.response);
-//		System.out.println(this.response.getBytes().length);
-//		writer.flush();
-//		reader.close();
-//		serverSocket.close();
-		byte[] responseBytes = this.response.getBytes();
-		byte[] payload = new byte[200];
-		int j = 0;
-		for(int i = 0; i < responseBytes.length  ; i++) {
-			payload[j] = responseBytes[i];
-			j++;
-			if(j == 200 || i == responseBytes.length -1) {				
-				// send payload
 				//-- convert response to packet
-				//increase sequence number
-				Packet responsePacket = new Packet(0, recivedPacket.getSequenceNumber()+1, recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), payload);
+				Packet responsePacket = new Packet(Packet.Type.SYNACKType.getPacketType(), this.seqNumber ++, recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), message);
 				
 				//-- convert response packet to byte[]
 				byte[] responseData = responsePacket.toBytes();
 				
 				//-- create datagram packet from byte[]
-				this.sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(this.routerIP), this.routerPort);
+				DatagramPacket sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(routerIP), routerPort);
 				
 				//-- send reply to udp port of the sender
-				this.serverUDPsocket.send(this.sendUDPacket);
+				this.serverUDPsocket.send(sendUDPacket);
 				
-				// reset payload
-				payload = new byte[200];				
-				j = 0;				
+				this.handshakingPhaseIDone = true;
+				
+			}
+			
+			if(this.handshakingPhaseIDone && recivedPacket.getType() == Packet.Type.ACKType.getPacketType() && requestPayload.trim().equalsIgnoreCase("ACK:"+this.seqNumber)) {
+				System.out.println("Connection Established between client and server.");
+				this.handshakingPhaseIIDone = true;
+			}
+		
+		
+			if(this.handshakingPhaseIDone && this.handshakingPhaseIIDone && recivedPacket.getType() == Packet.Type.DataType.getPacketType()) {
+				
+				for(String request : requestPayload.split("\n")) {
+					
+					if(request.endsWith("HTTP/1.0")) {
+						httpRequest = request;
+						isHttpRequest = true;
+					}				
+					else if(request.matches("(GET|POST)/(.*)")) {
+						fmsRequest = request;
+						isFMSRequest = true;
+					}	
+					
+					if(isFMSRequest) {
+						if(request.startsWith("-d")) {
+							content = request.substring(2);
+						}
+						else if(request.isEmpty()) {
+							break;
+						}
+					}
+					
+				}
+				
+				if(isFMSRequest) {
+					if(fmsRequest.startsWith("GET")) {
+						this.processGetRequest(fmsRequest.substring(4));
+					}else if(fmsRequest.startsWith("POST")) {
+						String fileName = fmsRequest.substring(5);
+						this.processPostRequest(fileName, content);
+					}
+				}		
+	
+				byte[] responseBytes = this.response.getBytes();
+				byte[] payload = new byte[payloadMaxSize];
+				int j = 0;
+				for(int i = 0; i < responseBytes.length  ; i++) {
+					payload[j] = responseBytes[i];
+					j++;
+					if(j == payloadMaxSize || i == responseBytes.length -1) {				
+						// send payload
+						//-- convert response to packet
+						//increase sequence number
+						Packet responsePacket = new Packet(0, recivedPacket.getSequenceNumber()+1, recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), payload);
+						
+						//-- convert response packet to byte[]
+						byte[] responseData = responsePacket.toBytes();
+						System.out.println("responseData.length: " + responseData.length);
+						
+						//-- create datagram packet from byte[]
+						this.sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(this.routerIP), this.routerPort);
+						
+						//-- send reply to udp port of the sender
+						this.serverUDPsocket.send(this.sendUDPacket);
+						
+						// reset payload
+						payload = new byte[payloadMaxSize];				
+						j = 0;				
+					}
+				}
 			}
 		}
-			
+					
 		}catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -329,5 +320,10 @@ public class HTTPServerLib extends Thread{
 	public  void writerPrintln(String s) {
 		this.response = this.response + s + "\r\n";
 	}
+	
+//	public void setUDPPacket(DatagramPacket packet) {
+//		this.recivedUDPacket = new DatagramPacket(packet.getData(), packet.getLength());
+//		this.recivedUDPacket.setAddress(packet.getAddress());this.recivedUDPacket.setPort(packet.getPort());
+//	}
 }
 
