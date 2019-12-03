@@ -4,13 +4,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.io.FilenameFilter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class HTTPServerLib extends Thread{
 	
@@ -27,16 +29,16 @@ public class HTTPServerLib extends Thread{
 	boolean isFMSRequest = false;
 	
 	DatagramSocket serverUDPsocket;
-//	DatagramPacket recivedUDPacket;
 	DatagramPacket sendUDPacket;
 	String routerIP;
 	int routerPort;
 	String response;
-	long seqNumber;
+	long seqNumber = 1000, seq = 1001;
 	long clientSeqNumber;
-	boolean handshakingPhaseIDone;
+	boolean handshakingPhaseIDone, flag;
 	boolean handshakingPhaseIIDone;
-	int payloadMaxSize = 1013;
+	int payloadMaxSize = 1013, windowSize = 4;
+	Map<Long, Packet> packetInfo = new LinkedHashMap<Long, Packet>();
 
 	//======================================================================= constructor
 	/**
@@ -56,15 +58,13 @@ public class HTTPServerLib extends Thread{
 	 */
 	public HTTPServerLib(DatagramSocket socket, String routerIP , int routerPort, String dir) {
 		this.serverUDPsocket = socket;
-//		this.recivedUDPacket = new DatagramPacket(packet.getData(), packet.getLength());
-//		this.recivedUDPacket.setAddress(packet.getAddress());this.recivedUDPacket.setPort(packet.getPort());
 		this.routerIP = routerIP;
 		this.routerPort = routerPort;
 		this.response = "";
 		this.workingDir = dir;
-		this.seqNumber = 1000;
 		this.handshakingPhaseIDone = false;
 		this.handshakingPhaseIIDone = false;
+		this.flag = false;
 	}
 
 	//======================================================================= main method run in server thread
@@ -86,21 +86,21 @@ public class HTTPServerLib extends Thread{
 			byte[] rawData = recivedUDPacket.getData();
 			
 			//-- create packet class to extract data
-			Packet recivedPacket = Packet.fromBytes(rawData);
+			Packet receivedPacket = Packet.fromBytes(rawData);
 			
 			//-- get request and create response			
-			String requestPayload = new String(recivedPacket.getPayload()).trim();
+			String requestPayload = new String(receivedPacket.getPayload()).trim();
 			
-			if(recivedPacket.getType() == Packet.Type.SYNType.getPacketType()) {
+			if(receivedPacket.getType() == Packet.Type.SYNType.getPacketType()) {
 				
 				this.handshakingPhaseIDone = false;
 				this.handshakingPhaseIIDone = false;
 				
-				this.clientSeqNumber = recivedPacket.getSequenceNumber() + 1;
+				this.clientSeqNumber = receivedPacket.getSequenceNumber() + 1;
 				byte [] message = ("SYN-ACK:" + this.clientSeqNumber).toString().trim().getBytes();
 		
 				//-- convert response to packet
-				Packet responsePacket = new Packet(Packet.Type.SYNACKType.getPacketType(), this.seqNumber ++, recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), message);
+				Packet responsePacket = new Packet(Packet.Type.SYNACKType.getPacketType(), this.seqNumber, receivedPacket.getPeerAddress(), receivedPacket.getPeerPort(), message);
 				
 				//-- convert response packet to byte[]
 				byte[] responseData = responsePacket.toBytes();
@@ -110,19 +110,34 @@ public class HTTPServerLib extends Thread{
 				
 				//-- send reply to udp port of the sender
 				this.serverUDPsocket.send(sendUDPacket);
-				
+				seqNumber++;
 				this.handshakingPhaseIDone = true;
 				
 			}
 			
-			if(this.handshakingPhaseIDone && recivedPacket.getType() == Packet.Type.ACKType.getPacketType() && requestPayload.trim().equalsIgnoreCase("ACK:"+this.seqNumber)) {
+			if(this.handshakingPhaseIDone && receivedPacket.getType() == Packet.Type.ACKType.getPacketType() && requestPayload.trim().equalsIgnoreCase("ACK:"+this.seq)) {
 				System.out.println("Connection Established between client and server.");
 				this.handshakingPhaseIIDone = true;
+				this.flag = true;
+			}
+			
+			if(this.handshakingPhaseIDone && this.handshakingPhaseIIDone) {
+				String originalResp = requestPayload.trim();
+				if(flag && packetInfo.size() > 0) {
+					sendPacket(seq);
+					this.flag = false;
+				}
+				
+				if(receivedPacket.getType() == Packet.Type.ACKDataType.getPacketType()) {
+					String[] data = originalResp.split(":");
+					long currentSequence = Integer.parseInt(data[1]);
+					sendPacket(currentSequence);
+				}
+				
 			}
 		
 		
-			if(this.handshakingPhaseIDone && this.handshakingPhaseIIDone && recivedPacket.getType() == Packet.Type.DataType.getPacketType()) {
-				
+			if(receivedPacket.getType() == Packet.Type.DataType.getPacketType()) {
 				for(String request : requestPayload.split("\n")) {
 					
 					if(request.endsWith("HTTP/1.0")) {
@@ -164,30 +179,60 @@ public class HTTPServerLib extends Thread{
 						// send payload
 						//-- convert response to packet
 						//increase sequence number
-						Packet responsePacket = new Packet(0, recivedPacket.getSequenceNumber()+1, recivedPacket.getPeerAddress(), recivedPacket.getPeerPort(), payload);
-						
+						Packet responsePacket = new Packet(Packet.Type.DataType.getPacketType(), seqNumber, receivedPacket.getPeerAddress(), receivedPacket.getPeerPort(), payload);
+						packetInfo.put(seqNumber, responsePacket);
 						//-- convert response packet to byte[]
-						byte[] responseData = responsePacket.toBytes();
-						System.out.println("responseData.length: " + responseData.length);
 						
 						//-- create datagram packet from byte[]
-						this.sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(this.routerIP), this.routerPort);
+//						this.sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(this.routerIP), this.routerPort); //comment
 						
 						//-- send reply to udp port of the sender
-						this.serverUDPsocket.send(this.sendUDPacket);
-						
+						seqNumber++;
 						// reset payload
 						payload = new byte[payloadMaxSize];				
 						j = 0;				
 					}
 				}
-			}
+				byte [] msg = new byte[4];
+				msg = ("Done").toString().trim().getBytes();
+				Packet ACKPacket = new Packet(Packet.Type.DataType.getPacketType(), seqNumber, receivedPacket.getPeerAddress(), receivedPacket.getPeerPort(), msg);
+				packetInfo.put(seqNumber, ACKPacket);
+				
+				if(this.handshakingPhaseIDone && this.handshakingPhaseIIDone) {
+					sendPacket(seq);
+					this.flag = false;
+				}
+			}	
 		}
 					
 		}catch (Exception e) {
 			e.printStackTrace();
 		}
 
+	}
+	
+	public synchronized void sendPacket(long seqNumber) throws IOException {
+		int counter = 0;
+		for(Map.Entry<Long, Packet> entry : packetInfo.entrySet()) {
+
+			if(counter < windowSize && entry.getKey()>=seqNumber) {	
+				//-- convert response packet to byte[]
+				byte[] responseData = new byte[entry.getValue().toBytes().length]; 
+				responseData = entry.getValue().toBytes(); 
+				
+				//-- create datagram packet from byte[]
+				this.sendUDPacket = new DatagramPacket(responseData, responseData.length, InetAddress.getByName(this.routerIP), this.routerPort); 
+				
+				//-- send reply to udp port of the sender
+				this.serverUDPsocket.send(this.sendUDPacket); 
+				counter++;
+				if(entry.getValue().getPayload().toString().equalsIgnoreCase("Done"))
+				{
+					break;
+				}
+			}
+		}
+		
 	}
 	
 	
@@ -221,14 +266,11 @@ public class HTTPServerLib extends Thread{
 							else {
 								fTitle = "path " + fCount + ": " + f.getName();
 							}
-							//writer.println(fTitle);
 							writerPrintln(fTitle);
 							System.out.println(fTitle);
 							fCount ++;
 						}
 
-//						writer.println("... <" + c + "> directory's contents has been listed");
-//						writer.println();
 						writerPrintln("... <" + c + "> directory's contents has been listed");
 						writerPrintln("");
 
@@ -241,17 +283,13 @@ public class HTTPServerLib extends Thread{
 								BufferedReader bfReader = new BufferedReader(fReader);
 								String line;					
 								while ((line = bfReader.readLine()) != null) {
-									//writer.println(line);
 									writerPrintln(line);
 								}	
-//								writer.println("... <" + c + "> has been read completely");
-//								writer.println();
 								writerPrintln("... <" + c + "> has been read completely");
 								writerPrintln("");
 								bfReader.close();
 						} catch (FileNotFoundException e) {
 							System.out.println("Error HTTP 404");
-							//writer.println("Error HTTP 404: File Not Found");
 							writerPrintln("Error HTTP 404: File Not Found");
 						} catch (IOException e) {
 							e.printStackTrace();
@@ -261,13 +299,11 @@ public class HTTPServerLib extends Thread{
 				} 
 				else {
 					System.out.println("Error HTTP 404");
-					//writer.println("Error HTTP 404: File not found !!!");
 					writerPrintln("Error HTTP 404: File not found !!!");
 				}
 			}
 		}else {
 			System.out.println("Access to this directory is denied");
-			//writer.println("Error: access to this directory is denied !!!");
 			writerPrintln("Error: access to this directory is denied !!!");
 		}
 	}
@@ -288,22 +324,19 @@ public class HTTPServerLib extends Thread{
 			try {				
 				fWriter = new PrintWriter(path);
 				fWriter.println(fileContent);
-				//writer.println("... " + fileName + " has been created");
 				writerPrintln("... " + fileName + " has been created");
 				fWriter.close();
 			} catch (FileNotFoundException e) {
 				System.out.println("Error HTTP 404");
-				//writer.println("Error HTTP 404: File not found !!!");
 				writerPrintln("Error HTTP 404: File not found !!!");
 			}
 		}else {
 			System.out.println("Access to this directory is denied !!!");
-			//writer.println("Error: access to this directory is denied !!!");
 			writerPrintln("Error: access to this directory is denied !!!");
 		}
 	}
 	
-	public String[] finder( String dirName, String target){
+	public String[] finder(String dirName, String target){
 		if(target.isEmpty()) {
 			String[] list = new String[1];
 			list[0] = "";
@@ -320,10 +353,5 @@ public class HTTPServerLib extends Thread{
 	public  void writerPrintln(String s) {
 		this.response = this.response + s + "\r\n";
 	}
-	
-//	public void setUDPPacket(DatagramPacket packet) {
-//		this.recivedUDPacket = new DatagramPacket(packet.getData(), packet.getLength());
-//		this.recivedUDPacket.setAddress(packet.getAddress());this.recivedUDPacket.setPort(packet.getPort());
-//	}
 }
 

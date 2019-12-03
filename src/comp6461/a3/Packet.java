@@ -12,7 +12,7 @@ import java.nio.ByteOrder;
  */
 public class Packet {
 	public enum Type {
-		DataType(8), ACKType(0), SYNType(1), SYNACKType(2), NAKType(3);
+		DataType(8), ACKType(0), SYNType(1), SYNACKType(2), NAKType(3), ACKDataType(4);
 	   
 	    private int ptype;
 

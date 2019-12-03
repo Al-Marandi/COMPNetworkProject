@@ -1,5 +1,11 @@
 package comp6461.a3;
 
-public class SelectiveRepeatBuffer {
+import java.util.Map;
 
+public class SelectiveRepeatBuffer {
+	Map<Long, Packet> packetInfo;
+	int sequenceNumber;
+	String packet;
+	
+	
 }
